@@ -1,0 +1,10 @@
+OK com.denil.profe.ContentRenderTest a1 9.292
+OK com.denil.profe.ContentRenderTest a2 6.018
+OK com.denil.profe.ContentRenderTest b1 5.045
+OK com.denil.profe.ContentRenderTest b2 4.553
+OK com.denil.profe.ContentRenderTest c1 3.971
+OK com.denil.profe.ContentRenderTest c2 2.618
+OK com.denil.profe.ExampleInstrumentedTest useAppContext 0.003
+OK com.denil.profe.SmokeTest leccionCompleta 8.894
+OK com.denil.profe.SmokeTest recorridoCompleto 9.467
+TOTAL UI: 9 pruebas, 0 fallas
