@@ -55,7 +55,7 @@ class SmokeTest {
     @Test
     fun recorridoCompleto() {
         // Inicio
-        waitFor("días de racha", substring = true)
+        waitFor("de racha", substring = true)
 
         // Examen de ubicación: respondiendo "No sé" siempre debe terminar en A1.
         tab("Ajustes")
@@ -130,7 +130,7 @@ class SmokeTest {
     /** Resuelve una lección completa (eligiendo la primera opción, ordenando o saltando) y verifica el resultado. */
     @Test
     fun leccionCompleta() {
-        waitFor("días de racha", substring = true)
+        waitFor("de racha", substring = true)
         tab("Curso")
         click("Hola, soy…", substring = true)
         click("Practica")
