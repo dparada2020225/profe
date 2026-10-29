@@ -38,6 +38,10 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        textReport = true
+        abortOnError = false
+    }
 }
 
 kotlin {

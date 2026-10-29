@@ -2,7 +2,11 @@ name: Android CI
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -23,44 +27,55 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Pruebas unitarias
-        run: ./gradlew --no-daemon testDebugUnitTest
-
-      - name: Compilar APK
-        run: ./gradlew --no-daemon assembleDebug
+      - name: Pruebas unitarias y APK
+        run: |
+          mkdir -p out
+          set -o pipefail
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug 2>&1 | tee out/build.log
 
       - name: Lint (informativo)
-        run: ./gradlew --no-daemon lintDebug
+        run: ./gradlew --no-daemon lintDebug 2>&1 | tail -30 > out/lint-summary.txt
         continue-on-error: true
 
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: reportes
-          path: |
-            app/build/reports/
-            app/build/test-results/
-          if-no-files-found: ignore
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: profe-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-  probe-apis:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
       - name: Verificar APIs gratuitas que usa la app
+        if: always()
+        continue-on-error: true
         run: |
-          set -x
-          curl -sS -o dict.json -w "dictionaryapi %{http_code}\n" https://api.dictionaryapi.dev/api/v2/entries/en/achieve
-          head -c 600 dict.json; echo
-          curl -sS -o tatoeba.json -w "tatoeba %{http_code}\n" "https://tatoeba.org/eng/api_v0/search?from=eng&to=spa&query=%3Dachieve&trans_filter=limit&trans_to=spa&sort=relevance"
-          head -c 1500 tatoeba.json; echo
-          curl -sS -o mm.json -w "mymemory %{http_code}\n" "https://api.mymemory.translated.net/get?q=achieve&langpair=en%7Ces"
-          head -c 400 mm.json; echo
-          curl -sS -o lt.json -w "languagetool %{http_code}\n" -d "text=She go to school yesterday." -d "language=en-US" https://api.languagetool.org/v2/check
-          head -c 600 lt.json; echo
-          curl -sS -o groq.json -w "groq (sin key, se espera 401) %{http_code}\n" https://api.groq.com/openai/v1/models
-          head -c 300 groq.json; echo
+          {
+            echo "== dictionaryapi"; curl -sS -w "\nHTTP %{http_code}\n" https://api.dictionaryapi.dev/api/v2/entries/en/achieve | head -c 800; echo
+            echo "== tatoeba"; curl -sS -w "\nHTTP %{http_code}\n" "https://tatoeba.org/eng/api_v0/search?from=eng&to=spa&query=%3Dachieve&trans_filter=limit&trans_to=spa&sort=relevance" | head -c 2500; echo
+            echo "== mymemory"; curl -sS -w "\nHTTP %{http_code}\n" "https://api.mymemory.translated.net/get?q=achieve&langpair=en%7Ces" | head -c 500; echo
+            echo "== languagetool"; curl -sS -w "\nHTTP %{http_code}\n" -d "text=She go to school yesterday." -d "language=en-US" https://api.languagetool.org/v2/check | head -c 800; echo
+            echo "== groq (sin key, se espera 401)"; curl -sS -w "\nHTTP %{http_code}\n" https://api.groq.com/openai/v1/models | head -c 300; echo
+          } > out/apis.txt 2>&1
+
+      - name: Resumen de pruebas
+        if: always()
+        run: |
+          python3 - <<'PY' > out/tests.txt
+          import glob, xml.etree.ElementTree as ET
+          total = fail = 0
+          for f in sorted(glob.glob("app/build/test-results/testDebugUnitTest/*.xml")):
+              r = ET.parse(f).getroot()
+              t, fl = int(r.get("tests")), int(r.get("failures")) + int(r.get("errors"))
+              total += t; fail += fl
+              print(f"{r.get('name')}: {t} pruebas, {fl} fallas")
+              for tc in r.iter("testcase"):
+                  for bad in list(tc.findall("failure")) + list(tc.findall("error")):
+                      print("  FALLA", tc.get("name"), (bad.get("message") or "")[:300])
+          print(f"TOTAL: {total} pruebas, {fail} fallas")
+          PY
+          cp app/build/reports/lint-results-debug.txt out/ 2>/dev/null || true
+
+      - name: Publicar APK y reportes en la rama ci-output
+        if: always()
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk out/profe-debug.apk 2>/dev/null || true
+          echo "${{ github.sha }} ${{ job.status }}" > out/STATUS.txt
+          cd out
+          git init -q -b ci-output
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "CI ${{ github.sha }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-output
