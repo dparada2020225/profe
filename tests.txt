@@ -1,0 +1,10 @@
+com.denil.profe.AnswerCheckerTest: 7 pruebas, 0 fallas
+com.denil.profe.ClozeTest: 5 pruebas, 0 fallas
+com.denil.profe.CourseContentTest: 3 pruebas, 0 fallas
+com.denil.profe.CsvCodecTest: 4 pruebas, 0 fallas
+com.denil.profe.CurriculumContentTest: 5 pruebas, 0 fallas
+com.denil.profe.DictionaryParsingTest: 3 pruebas, 0 fallas
+com.denil.profe.PlacementEngineTest: 4 pruebas, 0 fallas
+com.denil.profe.SessionPlannerTest: 12 pruebas, 0 fallas
+com.denil.profe.Sm2Test: 11 pruebas, 0 fallas
+TOTAL: 54 pruebas, 0 fallas

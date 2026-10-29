@@ -1,0 +1,15 @@
+== dictionaryapi
+<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="content-security-policy" content="default-src &#39;none&#39;; script-src &#39;nonce-ZbLar9vH98rqJnqbN9kWNn&#39; &#39;unsafe-eval&#39; https://challenges.cloudflare.com; script-src-attr &#39;none&#39;; style-src &#39;unsafe-inline&#39;; img-src &#39;self&#39; https://challenges.cloudflare.com; connect-src &#39;self&#39; https://challenges.cloudflare.com; frame-src &#39;self&#39; https://challenges.cloudflare.com blob:; child-src &#39;self&#39; https://challenges.cloudflare.
+== tatoeba
+
+HTTP 302
+
+== mymemory
+{"responseData":{"translatedText":"lograr, realizar","match":1},"quotaFinished":false,"mtLangSupported":null,"responseDetails":"","responseStatus":200,"responderId":null,"exception_code":null,"matches":[{"id":"569923960","segment":"achieve","translation":"lograr, realizar","source":"en-GB","target":"es-ES","quality":"0","reference":null,"usage-count":2,"subject":"All","created-by":"MateCat","last-updated-by":"MateCat","create-date":"2018-07-02 04:20:11","last-update-date":"2018-07-02 04:20:11","
+== languagetool
+{"software":{"name":"LanguageTool","version":"6.9-SNAPSHOT","buildDate":"2026-09-01 15:16:00 +0000","apiVersion":1,"premium":true,"premiumHint":"You might be missing errors only the Premium version can find. Contact us at support<at>languagetoolplus.com.","status":""},"warnings":{"incompleteResults":false},"language":{"name":"English (US)","code":"en-US","detectedLanguage":{"name":"English (US)","code":"en-US","confidence":1.0,"source":"ngram"}},"matches":[{"message":"The pronoun ‘She’ is usually used with a third-person or a past tense verb.","shortMessage":"Agreement error","replacements":[{"value":"goes"},{"value":"went"}],"offset":4,"length":2,"context":{"text":"She go to school yesterday.","offset":4,"length":2},"sentence":"She go to school yesterday.","type":{"typeName":"Other"},
+== groq (sin key, se espera 401)
+{"error":{"message":"Invalid API Key","type":"invalid_request_error","code":"invalid_api_key"}}
+
+HTTP 401
+
