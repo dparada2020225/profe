@@ -41,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -137,7 +138,7 @@ private fun ChoiceExercise(exercise: Exercise, onSpeak: (String, Boolean) -> Uni
             onClick = { if (!answered) picked = i },
             colors = colors,
             border = BorderStroke(1.dp, if (answered && isCorrect) Green else MaterialTheme.colorScheme.outline),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("option")
         ) { Text(option, style = MaterialTheme.typography.bodyLarge) }
     }
     if (picked >= 0) {
@@ -266,7 +267,7 @@ private fun OrderExercise(exercise: Exercise, onSpeak: (String, Boolean) -> Unit
     }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         shuffled.filter { it !in chosen }.forEach { i ->
-            AssistChip(onClick = { if (!checked) chosen = chosen + i }, label = { Text(tokens[i]) })
+            AssistChip(onClick = { if (!checked) chosen = chosen + i }, label = { Text(tokens[i]) }, modifier = Modifier.testTag("chip"))
         }
     }
     if (!checked) {

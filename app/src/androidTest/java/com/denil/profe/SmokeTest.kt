@@ -121,4 +121,46 @@ class SmokeTest {
         rule.onAllNodes(androidx.compose.ui.test.hasContentDescription("Estadísticas")).onFirst().performClick()
         rule.waitForIdle()
     }
+
+    private fun exists(text: String, substring: Boolean = false) =
+        rule.onAllNodesWithText(text, substring = substring, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+
+    private fun existsTag(tag: String) = rule.onAllNodes(androidx.compose.ui.test.hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()
+
+    /** Resuelve una lección completa (eligiendo la primera opción, ordenando o saltando) y verifica el resultado. */
+    @Test
+    fun leccionCompleta() {
+        waitFor("días de racha", substring = true)
+        tab("Curso")
+        click("Hola, soy…", substring = true)
+        click("Practica")
+        waitFor("1 de", substring = true)
+        var steps = 0
+        while (!exists("Repetir ejercicios") && steps++ < 80) {
+            when {
+                exists("Continuar") -> click("Continuar")
+                existsTag("option") -> {
+                    rule.onAllNodes(androidx.compose.ui.test.hasTestTag("option")).onFirst().performClick()
+                    rule.waitForIdle()
+                }
+                existsTag("chip") -> {
+                    while (existsTag("chip")) {
+                        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("chip")).onFirst().performClick()
+                        rule.waitForIdle()
+                    }
+                    click("Comprobar")
+                }
+                exists("Saltar", substring = true) -> click("Saltar", substring = true)
+                else -> rule.waitForIdle()
+            }
+        }
+        waitFor("Repetir ejercicios")
+        waitFor("XP", substring = true)
+        // Repetir y salir
+        click("Repetir ejercicios")
+        waitFor("1 de", substring = true)
+        back()
+        tab("Inicio")
+        waitFor("XP hoy", substring = true)
+    }
 }
