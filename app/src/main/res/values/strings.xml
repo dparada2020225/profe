@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Profe</string>
+    <string name="reminder_channel_name">Recordatorio diario</string>
+    <string name="reminder_channel_desc">Aviso diario para estudiar inglés</string>
+    <string name="reminder_title">¡Hora de tu clase de inglés!</string>
+    <string name="reminder_text">Tu profe te espera: una lección y tus repasos de hoy.</string>
+</resources>

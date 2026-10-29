@@ -1,0 +1,66 @@
+name: Android CI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Contenido del curso actualizado
+        run: |
+          python3 tools/curriculum/build.py
+          git diff --exit-code app/src/main/assets/curriculum || (echo "::error::Corre python3 tools/curriculum/build.py y sube el JSON" && exit 1)
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Pruebas unitarias
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Compilar APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Lint (informativo)
+        run: ./gradlew --no-daemon lintDebug
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reportes
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profe-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+  probe-apis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verificar APIs gratuitas que usa la app
+        run: |
+          set -x
+          curl -sS -o dict.json -w "dictionaryapi %{http_code}\n" https://api.dictionaryapi.dev/api/v2/entries/en/achieve
+          head -c 600 dict.json; echo
+          curl -sS -o tatoeba.json -w "tatoeba %{http_code}\n" "https://tatoeba.org/eng/api_v0/search?from=eng&to=spa&query=%3Dachieve&trans_filter=limit&trans_to=spa&sort=relevance"
+          head -c 1500 tatoeba.json; echo
+          curl -sS -o mm.json -w "mymemory %{http_code}\n" "https://api.mymemory.translated.net/get?q=achieve&langpair=en%7Ces"
+          head -c 400 mm.json; echo
+          curl -sS -o lt.json -w "languagetool %{http_code}\n" -d "text=She go to school yesterday." -d "language=en-US" https://api.languagetool.org/v2/check
+          head -c 600 lt.json; echo
+          curl -sS -o groq.json -w "groq (sin key, se espera 401) %{http_code}\n" https://api.groq.com/openai/v1/models
+          head -c 300 groq.json; echo
