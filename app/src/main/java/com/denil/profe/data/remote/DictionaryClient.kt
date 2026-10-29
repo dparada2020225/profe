@@ -26,11 +26,31 @@ data class SentencePair(val en: String, val es: String)
 @Singleton
 class DictionaryClient @Inject constructor() {
 
+    /**
+     * Busca en Free Dictionary API (con audio). Si no responde o bloquea la solicitud,
+     * usa Wiktionary como respaldo (sin audio: se pronuncia con la voz del teléfono).
+     */
     suspend fun lookup(word: String): DictionaryEntry? {
-        val res = Http.get("https://api.dictionaryapi.dev/api/v2/entries/en/" + Http.enc(word.trim().lowercase()).replace("+", "%20"))
+        val clean = word.trim().lowercase()
+        val primary = runCatching {
+            val res = Http.get("https://api.dictionaryapi.dev/api/v2/entries/en/" + Http.enc(clean).replace("+", "%20"))
+            when {
+                res.code == 404 -> null
+                res.code in 200..299 && res.body.trimStart().startsWith("[") -> parseFreeDictionary(res.body, clean)
+                else -> throw NetworkException("Free Dictionary respondió ${res.code}.", res.code)
+            }
+        }
+        primary.getOrNull()?.let { return it }
+        val res = Http.get("https://en.wiktionary.org/api/rest_v1/page/definition/" + Http.enc(clean).replace("+", "%20"))
         if (res.code == 404) return null
-        if (res.code !in 200..299) throw NetworkException("El diccionario respondió ${res.code}.", res.code)
-        val arr = JSONArray(res.body)
+        if (res.code !in 200..299) {
+            throw primary.exceptionOrNull() ?: NetworkException("El diccionario respondió ${res.code}.", res.code)
+        }
+        return parseWiktionary(res.body, clean)
+    }
+
+    fun parseFreeDictionary(body: String, word: String): DictionaryEntry? {
+        val arr = JSONArray(body)
         if (arr.length() == 0) return null
         var phonetic = ""
         var audio = ""
@@ -65,10 +85,41 @@ class DictionaryClient @Inject constructor() {
         return DictionaryEntry(arr.getJSONObject(0).optString("word", word), phonetic, audio, defs.take(8), synonyms.take(8).toList())
     }
 
+    /** Respuesta de Wiktionary REST: {"en":[{"partOfSpeech":..,"definitions":[{"definition":"<html>","examples":[..]}]}]} */
+    fun parseWiktionary(body: String, word: String): DictionaryEntry? {
+        val root = JSONObject(body)
+        val en = root.optJSONArray("en") ?: return null
+        val defs = ArrayList<Definition>()
+        for (i in 0 until en.length()) {
+            val pos = en.getJSONObject(i)
+            val partOfSpeech = pos.optString("partOfSpeech").lowercase()
+            val ds = pos.optJSONArray("definitions") ?: continue
+            var taken = 0
+            for (j in 0 until ds.length()) {
+                if (taken >= 3) break
+                val d = ds.getJSONObject(j)
+                val text = stripHtml(d.optString("definition"))
+                if (text.isBlank()) continue
+                val example = d.optJSONArray("examples")?.let { ex -> if (ex.length() > 0) stripHtml(ex.getString(0)) else "" }.orEmpty()
+                defs += Definition(partOfSpeech, text, example)
+                taken++
+            }
+        }
+        if (defs.isEmpty()) return null
+        return DictionaryEntry(word, "", "", defs.take(8), emptyList())
+    }
+
+    private fun stripHtml(html: String): String =
+        html.replace(Regex("<[^>]+>"), "")
+            .replace("&nbsp;", " ").replace("&amp;", "&").replace("&quot;", "\"")
+            .replace("&#39;", "'").replace("&lt;", "<").replace("&gt;", ">")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+
     /** Oraciones de Tatoeba que contienen la palabra, con su traducción al español. */
     suspend fun examples(word: String, limit: Int = 6): List<SentencePair> {
         val q = Http.enc("=" + word.trim())
-        val url = "https://tatoeba.org/eng/api_v0/search?from=eng&to=spa&query=$q&trans_filter=limit&trans_to=spa&sort=relevance"
+        val url = "https://tatoeba.org/en/api_v0/search?from=eng&to=spa&query=$q&trans_filter=limit&trans_to=spa&sort=relevance"
         val res = Http.get(url)
         if (res.code !in 200..299) throw NetworkException("Tatoeba respondió ${res.code}.", res.code)
         return parseTatoeba(res.body, limit)
