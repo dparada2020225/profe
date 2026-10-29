@@ -17,7 +17,7 @@ object CsvCodec {
     fun parse(text: String): ParseResult {
         val rows = ArrayList<Row>()
         var skipped = 0
-        val records = splitRecords(text.removePrefix("﻿"))
+        val records = splitRecords(text.removePrefix("\uFEFF"))
         for ((index, record) in records.withIndex()) {
             if (record.isBlank()) continue
             val fields = splitFields(record)

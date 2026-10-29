@@ -1,0 +1,30 @@
+name: Probar APIs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probar
+        run: |
+          mkdir out
+          {
+            UA="ProfeApp/1.0 (Android; personal English tutor)"
+            for u in \
+              "https://api.dictionaryapi.dev/api/v2/entries/en/achieve" \
+              "https://tatoeba.org/eng/api_v0/search?from=eng&to=spa&query=%3Dachieve&trans_filter=limit&trans_to=spa&sort=relevance" \
+              "https://tatoeba.org/en/api_v0/search?from=eng&to=spa&query=%3Dachieve&trans_filter=limit&trans_to=spa&sort=relevance" \
+              "https://api.tatoeba.org/unstable/sentences?lang=eng&q=achieve&trans%3Alang=spa&sort=relevance&limit=3" \
+              "https://en.wiktionary.org/api/rest_v1/page/definition/achieve" ; do
+              echo "=================== $u"
+              curl -sS -A "$UA" -D - -o body.txt "$u" | grep -iE "^HTTP|^location|^content-type" ; head -c 1800 body.txt; echo
+              echo "--- con -L:"; curl -sSL -A "$UA" -o body2.txt -w "final %{http_code} %{url_effective}\n" "$u"; head -c 1200 body2.txt; echo
+            done
+          } > out/probe.txt 2>&1
+          cd out && git init -q -b ci-probe && git config user.name gha && git config user.email gha@users.noreply.github.com && git add -A && git commit -q -m probe && git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-probe
